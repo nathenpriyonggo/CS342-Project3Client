@@ -43,10 +43,10 @@ public class Client extends Thread{
 	
     }
 	
-	public void send(String data) {
+	public void send(Message newMessage) {
 		
 		try {
-			out.writeObject(data);
+			out.writeObject(newMessage);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

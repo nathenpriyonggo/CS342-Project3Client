@@ -13,16 +13,15 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 public class GuiClient extends Application{
 
-	
-	TextField c1;
-	Button b1;
-	HashMap<String, Scene> sceneMap;
-	VBox clientBox;
+	String clientName;
+	TextField text_chat, text_username;
+	Button button_send, button_username;
 	Client clientConnection;
 	
 	ListView<String> listItems2;
@@ -34,23 +33,57 @@ public class GuiClient extends Application{
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+
+		Font.loadFont(getClass().getResourceAsStream("gg-sans-2/gg sans Regular.ttf"), 14);
+		Font.loadFont(getClass().getResourceAsStream("gg-sans-2/gg sans Medium.ttf"), 14);
+		Font.loadFont(getClass().getResourceAsStream("gg-sans-2/gg sans Semibold.ttf"), 14);
+		Font.loadFont(getClass().getResourceAsStream("gg-sans-2/gg sans Bold.ttf"), 14);
+
 		clientConnection = new Client(data->{
-				Platform.runLater(()->{listItems2.getItems().add(data.toString());
+				Platform.runLater(()->{
+					listItems2.getItems().add(0, data.toString());
 			});
 		});
-							
+
 		clientConnection.start();
 
 		listItems2 = new ListView<String>();
-		
-		c1 = new TextField();
-		b1 = new Button("Send");
-		b1.setOnAction(e->{clientConnection.send(c1.getText()); c1.clear();});
-		
-		sceneMap = new HashMap<String, Scene>();
 
-		sceneMap.put("client",  createClientGui());
-		
+
+
+
+
+
+		// Username Scene: Username text field
+		text_username = new TextField();
+
+		// Username Scene: Username button
+		button_username = new Button("Confirm");
+		button_username.setOnAction(e->{
+			clientName = text_username.getText();
+			text_username.clear();
+			primaryStage.setTitle(clientName + "'s Text-it");
+			primaryStage.setScene(createTextItGui());
+		});
+
+
+		// Text it Scene: Chat text field
+		text_chat = new TextField();
+
+		// Text it Scene: Send button
+		button_send = new Button("Send");
+		button_send.setOnAction(e->{
+			Message newMessage = new Message(clientName, text_chat.getText());
+			clientConnection.send(newMessage);
+			text_chat.clear();
+		});
+
+
+
+
+
+
+
 		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent t) {
@@ -59,21 +92,40 @@ public class GuiClient extends Application{
             }
         });
 
-
-		primaryStage.setScene(sceneMap.get("client"));
-		primaryStage.setTitle("Client");
+		primaryStage.setScene(createUsernameGui());
+		primaryStage.setTitle("Text-it");
 		primaryStage.show();
-		
 	}
 	
 
-	
-	public Scene createClientGui() {
+	/*
+	Username scene code
+	 */
+	public Scene createUsernameGui() {
+
+		VBox paneVertical = new VBox(10, text_username, button_username);
+		paneVertical.setStyle("-fx-font-family: 'gg sans Semibold'");
+
+		BorderPane pane = new BorderPane();
+		pane.setPadding(new Insets(70));
+		pane.setCenter(paneVertical);
+
+		return new Scene(pane, 500, 400);
+	}
+
+	/*
+	Text-it scene code
+	 */
+	public Scene createTextItGui() {
 		
-		clientBox = new VBox(10, c1,b1,listItems2);
-		clientBox.setStyle("-fx-background-color: blue;"+"-fx-font-family: 'serif';");
-		return new Scene(clientBox, 400, 300);
-		
+		VBox paneVertical = new VBox(10, text_chat, button_send, listItems2);
+		paneVertical.setStyle("-fx-font-family: 'gg sans Semibold'");
+
+		BorderPane pane = new BorderPane();
+		pane.setPadding(new Insets(70));
+		pane.setCenter(paneVertical);
+
+		return new Scene(pane, 500, 400);
 	}
 
 }
