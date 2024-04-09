@@ -29,14 +29,16 @@ public class Client extends Thread{
 	    out = new ObjectOutputStream(socketClient.getOutputStream());
 	    in = new ObjectInputStream(socketClient.getInputStream());
 	    socketClient.setTcpNoDelay(true);
+
+
 		}
 		catch(Exception e) {}
 		
 		while(true) {
 			 
 			try {
-			String message = in.readObject().toString();
-			callback.accept(message);
+				Message msg = (Message) in.readObject();
+				callback.accept(msg);
 			}
 			catch(Exception e) {}
 		}
