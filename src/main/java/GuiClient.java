@@ -45,29 +45,43 @@ public class GuiClient extends Application{
 		Font.loadFont(getClass().getResourceAsStream("gg-sans-2/gg sans Bold.ttf"), 14);
 
 		clientConnection = new Client(data->{
-				Platform.runLater(()->{
-					Message msg = (Message) data;
+			Platform.runLater(()->{
+				Message msg = (Message) data;
 
-					if (msg.isCheckUniqueName()) {
-						uniqueName = msg.getData();
+				if (msg.isCheckUniqueName()) {
+					if (Objects.equals(msg.getData(), "true")) {
+						button_username.setDisable(true);
+
+						clientName = msg.getUsername();
+						text_username.clear();
+
+						primaryStage.setTitle(clientName + "'s Text-it");
+						primaryStage.setScene(createTextItGui());
+
+						clientConnection.send(new Message(clientName, null,
+								null, "isInfoName"));
 					}
 					else {
-						if (msg.isUpdateFriends()) {
-							if (msg.getData().equals("addFriend")) {
-								list_profiles.getItems().add(msg.getUsername());
-							} else if (msg.getData().equals("removeFriend")) {
-								list_profiles.getItems().remove(msg.getUsername());
-							}
-						} else {
-							list_text.getItems().add(0, msg.getData());
-						}
-
-						combo_send.getItems().clear();
-						combo_send.getItems().add("Public");
-						combo_send.getItems().addAll(list_profiles.getItems());
-						combo_send.getItems().remove(clientName);
-						combo_send.setValue(prevComboChoice);
+						text_username.setText("username exists");
 					}
+				}
+				else {
+					if (msg.isUpdateFriends()) {
+						if (msg.getData().equals("addFriend")) {
+							list_profiles.getItems().add(msg.getUsername());
+						} else if (msg.getData().equals("removeFriend")) {
+							list_profiles.getItems().remove(msg.getUsername());
+						}
+					} else {
+						list_text.getItems().add(0, msg.getData());
+					}
+
+					combo_send.getItems().clear();
+					combo_send.getItems().add("Public");
+					combo_send.getItems().addAll(list_profiles.getItems());
+					combo_send.getItems().remove(clientName);
+					combo_send.setValue(prevComboChoice);
+				}
 			});
 		});
 
@@ -101,79 +115,17 @@ public class GuiClient extends Application{
 
 		// Username Scene: Username text field
 		text_username = new TextField();
-		text_username.setOnKeyPressed(e->{
-			if (e.getCode() == KeyCode.ENTER) {
-
-				button_username.setDisable(true);
-
-				clientName = text_username.getText();
-				text_username.clear();
-
-				primaryStage.setTitle(clientName + "'s Text-it");
-				primaryStage.setScene(createTextItGui());
-
-				clientConnection.send(new Message(clientName, null,
-						null, "isInfoName"));
-			}
-		});
 		// Username Scene: Username button
-		button_username = new Button("Confirm");
-//		button_username.setOnAction(e->{
-//
-//			String name = text_username.getText();
-//
-//			try {
-//				clientConnection.send(new Message(name, "",
-//						"", "isCheckUniqueName"));
-//			} catch (Exception temp) {}
-//
-//			boolean wait = true;
-//
-//			while (wait) {
-//				if (Objects.equals(uniqueName, "true")) {
-//					System.out.println("we in1");
-//					clientName = name;
-//					text_username.clear();
-//
-//					primaryStage.setTitle(clientName + "'s Text-it");
-//					primaryStage.setScene(createTextItGui());
-//
-//					clientConnection.send(new Message(clientName, "",
-//							"", "isInfoName"));
-//					System.out.println("we in2");
-//					wait = false;
-//					System.out.println("we in3");
-//				} else if (Objects.equals(uniqueName, "false")) {
-//					text_username.setText("Username already exists...");
-//					wait = false;
-//				}
-//				else {
-//					System.out.println("while loop again");
-//				}
-//			}
-//		});
+		button_username = new Button("enterrm");
+		button_username.setOnAction(e->{
+			clientConnection.send(new Message(text_username.getText(), "",
+					"", "isCheckUniqueName"));
+		});
 
 
 		// Text it Scene: Chat text field
 		text_chat = new TextField();
-		text_chat.setOnKeyPressed(e->{
-			if (e.getCode() == KeyCode.ENTER) {
-				Message newMessage;
-
-				if (Objects.equals(combo_send.getValue(), "Public")) {
-					newMessage = new Message(clientName, null,
-							text_chat.getText(), "isPublicText");
-				}
-				else {
-					newMessage = new Message(clientName, combo_send.getValue(),
-							text_chat.getText(), "isPrivateText");
-				}
-
-				prevComboChoice = combo_send.getValue();
-				clientConnection.send(newMessage);
-				text_chat.clear();
-			}
-		});
+		
 		// Text it Scene: Send button
 		button_send = new Button("Send");
 		button_send.setOnAction(e->{
