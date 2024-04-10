@@ -23,8 +23,7 @@ import javafx.stage.WindowEvent;
 
 public class GuiClient extends Application{
 
-	String clientName, prevComboChoice;
-
+	String clientName, prevComboChoice, uniqueName;
 	TextField text_chat, text_username;
 	Button button_send, button_username, button_textIcon, button_profileIcon, button_groupIcon;
 	Client clientConnection;
@@ -49,27 +48,33 @@ public class GuiClient extends Application{
 				Platform.runLater(()->{
 					Message msg = (Message) data;
 
-
-					if (msg.isUpdateFriends()) {
-						if (msg.getData().equals("addFriend")) {
-							list_profiles.getItems().add(msg.getUsername());
-						}
-						else if (msg.getData().equals("removeFriend")) {
-							list_profiles.getItems().remove(msg.getUsername());
-						}
+					if (msg.isCheckUniqueName()) {
+						uniqueName = msg.getData();
 					}
 					else {
-						list_text.getItems().add(0, msg.getData());
-					}
+						if (msg.isUpdateFriends()) {
+							if (msg.getData().equals("addFriend")) {
+								list_profiles.getItems().add(msg.getUsername());
+							} else if (msg.getData().equals("removeFriend")) {
+								list_profiles.getItems().remove(msg.getUsername());
+							}
+						} else {
+							list_text.getItems().add(0, msg.getData());
+						}
 
-					combo_send.getItems().clear();
-					combo_send.getItems().add("Public");
-					combo_send.getItems().addAll(list_profiles.getItems());
-					combo_send.setValue(prevComboChoice);
+						combo_send.getItems().clear();
+						combo_send.getItems().add("Public");
+						combo_send.getItems().addAll(list_profiles.getItems());
+						combo_send.getItems().remove(clientName);
+						combo_send.setValue(prevComboChoice);
+					}
 			});
 		});
+
+		// Starting operations
 		clientConnection.start();
 		prevComboChoice = "Public";
+		uniqueName = "";
 
 
 
@@ -113,17 +118,40 @@ public class GuiClient extends Application{
 		});
 		// Username Scene: Username button
 		button_username = new Button("Confirm");
-		button_username.setOnAction(e->{
-
-			clientName = text_username.getText();
-			text_username.clear();
-
-			primaryStage.setTitle(clientName + "'s Text-it");
-			primaryStage.setScene(createTextItGui());
-
-			clientConnection.send(new Message(clientName, "",
-					"", "isInfoName"));
-		});
+//		button_username.setOnAction(e->{
+//
+//			String name = text_username.getText();
+//
+//			try {
+//				clientConnection.send(new Message(name, "",
+//						"", "isCheckUniqueName"));
+//			} catch (Exception temp) {}
+//
+//			boolean wait = true;
+//
+//			while (wait) {
+//				if (Objects.equals(uniqueName, "true")) {
+//					System.out.println("we in1");
+//					clientName = name;
+//					text_username.clear();
+//
+//					primaryStage.setTitle(clientName + "'s Text-it");
+//					primaryStage.setScene(createTextItGui());
+//
+//					clientConnection.send(new Message(clientName, "",
+//							"", "isInfoName"));
+//					System.out.println("we in2");
+//					wait = false;
+//					System.out.println("we in3");
+//				} else if (Objects.equals(uniqueName, "false")) {
+//					text_username.setText("Username already exists...");
+//					wait = false;
+//				}
+//				else {
+//					System.out.println("while loop again");
+//				}
+//			}
+//		});
 
 
 		// Text it Scene: Chat text field
@@ -221,7 +249,7 @@ public class GuiClient extends Application{
 		pane.setPadding(new Insets(70));
 		pane.setCenter(rowCenter);
 
-		return new Scene(pane, 600, 500);
+		return new Scene(pane, 500, 400);
 	}
 
 	/*

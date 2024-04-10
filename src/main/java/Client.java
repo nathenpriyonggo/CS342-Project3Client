@@ -3,6 +3,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 
@@ -11,9 +12,9 @@ public class Client extends Thread{
 
 	
 	Socket socketClient;
-	
 	ObjectOutputStream out;
 	ObjectInputStream in;
+
 	
 	private Consumer<Serializable> callback;
 	
@@ -37,7 +38,9 @@ public class Client extends Thread{
 		while(true) {
 			 
 			try {
+				System.out.println("looks like we wait here?");
 				Message msg = (Message) in.readObject();
+				System.out.println("did we get in client.jkava reply " + msg.getData());
 				callback.accept(msg);
 			}
 			catch(Exception e) {}
