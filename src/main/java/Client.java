@@ -7,7 +7,9 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 
-
+/*
+Client class
+ */
 public class Client extends Thread{
 
 	
@@ -17,7 +19,8 @@ public class Client extends Thread{
 
 	
 	private Consumer<Serializable> callback;
-	
+
+	// Default constructor
 	Client(Consumer<Serializable> call){
 	
 		callback = call;
@@ -34,20 +37,25 @@ public class Client extends Thread{
 
 		}
 		catch(Exception e) {}
-		
+
+		// Continuously receive input
 		while(true) {
 			 
 			try {
-				System.out.println("looks like we wait here?");
 				Message msg = (Message) in.readObject();
-				System.out.println("did we get in client.jkava reply " + msg.getData());
 				callback.accept(msg);
 			}
 			catch(Exception e) {}
 		}
 	
     }
-	
+
+
+	/*
+	Helper Functions
+	 */
+
+	// Send output message
 	public void send(Message newMessage) {
 		
 		try {
