@@ -42,6 +42,7 @@ public class GuiClient extends Application{
 	ListView<Label> list_profiles, list_groups, list_messages;
 	ListView<RadioButton> list_groupChooseFriend;
 	ChoiceBox<String> choiceBox_send;
+	ArrayList<String> array_groups;
 	
 	
 	public static void main(String[] args) {
@@ -82,6 +83,37 @@ public class GuiClient extends Application{
 					// Loop back if used name
 					else {
 						text_username.setText("Username already exists...");
+					}
+				}
+				// Input message is unique group name check
+				else if (msg.isCheckUniqueGroupName()) {
+
+					// Group name is unique
+					if (Objects.equals(msg.getData(), "true")) {
+						// copy to move
+						String groupName = msg.getUsername();
+						for (RadioButton radio : list_groupChooseFriend.getItems()) {
+							if (radio.isSelected()) {
+								try {
+									clientConnection.send(new Message(radio.getText(), "",
+											groupName, "isNewGroupAddMember"));
+								} catch (Exception temp) {}
+							}
+						}
+						try {
+							clientConnection.send(new Message("", "",
+									groupName, "isUpdateArrayGroups"));
+						} catch (Exception temp) {}
+
+						primaryStage.setScene(createProfileGui());
+						text_groupName.setText("");
+					}
+					// Group name already exists
+					else {
+						text_groupName.setText("Group name already exists...");
+					}
+					for (RadioButton radio : list_groupChooseFriend.getItems()) {
+						radio.setSelected(false);
 					}
 				}
 				else {
@@ -125,6 +157,10 @@ public class GuiClient extends Application{
 						newLabel.setTextFill(Color.web("#353935"));
 						list_groups.getItems().add(newLabel);
 					}
+					// Input message is update array groups
+					else if (msg.isUpdateArrayGroups()) {
+						array_groups.add(msg.getData());
+					}
 					// Input message is public or either private text
 					else {
 						Label newLabel = new Label(msg.getData());
@@ -140,6 +176,11 @@ public class GuiClient extends Application{
 							newLabel.setFont(Font.font("gg sans Semibold", 14));
 							newLabel.setTextFill(Color.web("#800080"));
 						}
+						// Set design if private text
+						else if (msg.isGroupText()) {
+							newLabel.setFont(Font.font("gg sans Semibold", 14));
+							newLabel.setTextFill(Color.web("#CD7F32"));
+						}
 						// Set design if notification
 						else {
 							newLabel.setFont(Font.font("gg sans Bold", 14));
@@ -150,9 +191,12 @@ public class GuiClient extends Application{
 						list_messages.getItems().add(0, newLabel);
 					}
 
-					// Update combo box lists
+					// Update combo box listsw
 					choiceBox_send.getItems().clear();
 					choiceBox_send.getItems().add("Public");
+					for (String group : array_groups) {
+						choiceBox_send.getItems().add("to: " + group);
+					}
 					for (Label label : list_profiles.getItems()) {
 						if (!Objects.equals(label.getText(), clientName)) {
 							choiceBox_send.getItems().add("to: " + label.getText());
@@ -165,8 +209,9 @@ public class GuiClient extends Application{
 
 		// Starting operations
 		clientConnection.start();
-		prevComboChoice = "Public";
+		array_groups = new ArrayList<>();
 		uniqueName = "";
+		prevComboChoice = "Public";
 
 
 
@@ -248,9 +293,9 @@ public class GuiClient extends Application{
 				"-fx-alignment: center");
 		// Text it Scene: send combo box
 		choiceBox_send = new ChoiceBox<>();
-		choiceBox_send.setStyle("-fx-font-family: 'gg sans Medium';" +
-				"-fx-font-size: 15;" +
-				"-fx-font-style: italic;");
+		choiceBox_send.setStyle("-fx-font-style: italic;" +
+				"-fx-font-family: 'gg sans Medium';" +
+				"-fx-font-size: 14");
 		// Text it Scene: Chat text field
 		text_chat = new TextField();
 		text_chat.setStyle("-fx-text-fill: black;" +
@@ -264,18 +309,29 @@ public class GuiClient extends Application{
 				"-fx-font-family: 'gg sans Semibold';" +
 				"-fx-background-color: #CF9FFF;");
 		button_send.setOnAction(e->{
-			Message newMessage;
+			Message newMessage = null;
 
 			if (Objects.equals(choiceBox_send.getValue(), "Public")) {
 				newMessage = new Message(clientName, null,
 						text_chat.getText(), "isPublicText");
 			}
 			else {
+				boolean sendPrivateText = true;
 				String name = choiceBox_send.getValue();
-				String extractedName = choiceBox_send.getValue().substring(
+				String extractedName = name.substring(
 						name.indexOf(":") + 2);
-				newMessage = new Message(clientName, extractedName,
-						text_chat.getText(), "isPrivateText");
+				for (Label groupName : list_groups.getItems()) {
+					if (extractedName.equals(groupName.getText())) {
+						newMessage = new Message(clientName, extractedName,
+								text_chat.getText(), "isGroupText");
+						sendPrivateText = false;
+						break;
+					}
+				}
+				if (sendPrivateText) {
+					newMessage = new Message(clientName, extractedName,
+							text_chat.getText(), "isPrivateText");
+				}
 			}
 			prevComboChoice = choiceBox_send.getValue();
 			clientConnection.send(newMessage);
@@ -284,6 +340,7 @@ public class GuiClient extends Application{
 		// Text it scene: Text Log List
 		list_messages = new ListView<Label>();
 		list_messages.setMaxHeight(200);
+		list_messages.setMaxWidth(450);
 
 
 
@@ -303,9 +360,11 @@ public class GuiClient extends Application{
 		// Profile Scene: Profile List
 		list_profiles = new ListView<Label>();
 		list_profiles.setMaxHeight(150);
+		list_profiles.setMaxWidth(200);
 		// Profile Scene: Group List
 		list_groups = new ListView<Label>();
 		list_groups.setMaxHeight(150);
+		list_groups.setMaxWidth(200);
 		// Profile Scene: Friend list Label
 		label_friendsList = new Label("your Friends:");
 		label_friendsList.setStyle("-fx-text-fill: black;" +
@@ -329,30 +388,51 @@ public class GuiClient extends Application{
 				"-fx-font-family: 'gg sans Medium';" +
 				"-fx-pref-width: 250");
 		// New Group Scene: Group confirm button
-		button_groupName = new Button("group-it?");
+		button_groupName = new Button("name-it");
 		button_groupName.setStyle("-fx-text-fill: black;" +
 				"-fx-font-size: 15;" +
 				"-fx-font-family: 'gg sans Semibold';" +
 				"-fx-background-color: #CF9FFF;");
 		button_groupName.setOnAction(e->{
-			String groupName = text_groupName.getText();
+
+			boolean allRadioNotSelected = true;
 			for (RadioButton radio : list_groupChooseFriend.getItems()) {
-                if (radio.isSelected()) {
-					try {
-						clientConnection.send(new Message(radio.getText(), "",
-								groupName, "isNewGroupAddMember"));
-					} catch (Exception temp) {}
-                }
-            }
-			primaryStage.setScene(createProfileGui());
+				if (radio.isSelected()) {
+					allRadioNotSelected = false;
+					break;
+				}
+			}
+
+			if (text_groupName.getText().trim().isEmpty()) {
+				text_groupName.setText("Group name cannot be empty...");
+			}
+			else if (allRadioNotSelected) {
+				text_groupName.setText("Group has to have at least one member...");
+			}
+			else {
+				try {
+					clientConnection.send(new Message("", "",
+							text_groupName.getText(), "isCheckUniqueGroupName"));
+				} catch (Exception temp) {
+				}
+			}
 		});
 		// New Group Scene: List of friends to choose from to make a group
 		list_groupChooseFriend = new ListView<>();
-		list_groups.setMaxHeight(150);
-
-
-
-
+		list_groupChooseFriend.setMaxHeight(180);
+		list_groupChooseFriend.setMaxWidth(190);
+		// New Group Scene: New Group-it? label
+		label_newGroupIt = new Label("new Group-it?");
+		label_newGroupIt.setStyle("-fx-text-fill: black;" +
+				"-fx-font-size: 45;" +
+				"-fx-font-family: 'gg sans Bold';" +
+				"-fx-alignment: center");
+		// New Group Scene: friends to add label
+		label_friendsToAddIt = new Label("friends to add-it");
+		label_friendsToAddIt.setStyle("-fx-text-fill: black;" +
+				"-fx-font-size: 15;" +
+				"-fx-font-family: 'gg sans Semibold';" +
+				"-fx-alignment: center");
 
 
 
@@ -457,18 +537,27 @@ public class GuiClient extends Application{
 	 */
 	public Scene createNewGroupGui() {
 
-		Label label = new Label("New group");
+		HBox colApps = new HBox(100, button_profileIcon, button_messageIcon, button_groupIcon);
+		colApps.setAlignment(Pos.CENTER);
 
-		HBox colApps = new HBox(10, button_profileIcon, button_messageIcon, button_groupIcon);
+		HBox colGroupName = new HBox(30, text_groupName, button_groupName);
+		colGroupName.setAlignment(Pos.CENTER);
 
+		VBox rowFriendsList = new VBox(5, label_friendsToAddIt, list_groupChooseFriend);
+		rowFriendsList.setAlignment(Pos.CENTER);
 
-		VBox rowCenter = new VBox(10, label,  text_groupName,
-				button_groupName, list_groupChooseFriend, colApps);
+		VBox rowCenter = new VBox(20, label_newGroupIt, colGroupName, rowFriendsList);
+		rowCenter.setAlignment(Pos.CENTER);
+
+		VBox rowTop = new VBox(50, label_newGroupIt, rowCenter);
+		rowTop.setAlignment(Pos.CENTER);
 
 
 		BorderPane pane = new BorderPane();
 		pane.setPadding(new Insets(50));
-		pane.setCenter(rowCenter);
+		pane.setTop(rowTop);
+		pane.setBottom(colApps);
+		pane.setStyle("-fx-background-color: #DDF6E9");
 
 		return new Scene(pane, 600, 600);
 	}
